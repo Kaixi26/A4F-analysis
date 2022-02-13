@@ -30,10 +30,10 @@ class D3:
     #self.links.append({"source": self.nodes[source]["id"], "target": self.nodes[target]["id"]})
   
   def to_dict(self):
-    links = []
+    edges = []
     for source in self.links:
       for target in self.links[source]:
-        links.append({
+        edges.append({
           "source":self.nodes[source]["id"],
           "target":self.nodes[target]["id"],
           "value":self.links[source][target]
@@ -46,4 +46,4 @@ class D3:
         "n": self.visits.get(node["name"], 0),
         "id": node["id"]
       })
-    return { "nodes": nodes, "edges": links }
+    return { "nodes": nodes, "edges": edges }

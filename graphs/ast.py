@@ -12,7 +12,7 @@ class AST:
       return
     self.expr = expr
 
-  def from_expr(expr):
+  def from_expr(expr, scope=[]):
     ast = AST(expr)
     className = expr.getClass().getSimpleName()
     #print(className)
@@ -29,8 +29,16 @@ class AST:
 
 
     elif className == 'ExprQt':
-      ast.name = expr.op.toString()
-      ast.children.append(AST.from_expr(expr.sub))
+      try:
+        ast.name = expr.op.toString()
+        scp = []
+        for i in range(expr.decls.size()):
+          scp.append(expr.decls.get(i).expr.toString())
+        print(scp)
+        ast.children.append(AST.from_expr(expr.sub))
+      except e:
+        print(e)
+        exit(1)
 
     elif className == 'ExprBinary':
       ast.name = expr.op.toString()

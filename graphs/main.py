@@ -101,20 +101,23 @@ fst_execution = list(dataset.execution_traces.keys())[0]
 
 
 graphs = {}
-for cmdi in range(9,20):
+for cmdi in range(19,20):
   graph = d3.D3()
   codes = {"{true}": "initial state"}
+  vistrue = 0
+  vissat = 0
   for execution_key in dataset.execution_traces.keys():
     if cmdi not in dataset.execution_traces[execution_key].subtraces_by_cmd:
       continue
 
+    vistrue += 1
     prev = "{true}"
     graph.add_visit(prev)
     graph.add_group(prev, 1)
     prop_name = "prop" + str(cmdi+1)
 
     for execution in dataset.execution_traces[execution_key].subtraces_by_cmd[cmdi]:
-      assert(execution["cmd_i"] == cmdi)
+      assert execution["cmd_i"] == cmdi
       source = alloy.keep_pred(execution["code"], prop_name, alloy.pred_list())
       try:
         ast = alloy.pred_ast_from_source(source)
@@ -129,14 +132,28 @@ for cmdi in range(9,20):
 
       prev = curr
 
-      #if execution["sat"] == 0:
-      #  break
+      if curr == "{always{all{since{in{var/this/File}{this/Trash}}{!in{var/this/File}{this/Protected}}}}}" and not execution["sat"] == 0:
+        #print(source)
+        exit(execution["code"])
+        exit(0)
+      #elif curr == "{always{all{since{in{var/this/File}{this/Trash}}{!in{var/this/File}{this/Protected}}}}}":
+      #  print(source)
+      #  #exit(execution["code"])
+      #  exit(0)
 
+      if execution["sat"] == 0:
+        vissat += 1
+        break
+
+  #print(vissat)
+  #print(vistrue)
+  #print(graph.visits)
+  #print(graph.links)
   graph_dict = graph.to_dict()
   graph_dict["codes"] = codes
   graphs[prop_name] = graph_dict
 
-print(re.escape(json.dumps(graphs)))
+#print(json.dumps(graphs))
 
 #validate_dataset(dataset)
 
