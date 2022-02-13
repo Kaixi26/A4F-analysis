@@ -29,7 +29,7 @@ class D3:
 
     #self.links.append({"source": self.nodes[source]["id"], "target": self.nodes[target]["id"]})
   
-  def to_json(self):
+  def to_dict(self):
     links = []
     for source in self.links:
       for target in self.links[source]:
@@ -43,7 +43,7 @@ class D3:
       nodes.append({
         "name": node["name"],
         "grp": self.groups[node["name"]],
-        "n": self.visits.get(node["name"], 0) + 1,
+        "n": self.visits.get(node["name"], 0),
         "id": node["id"]
       })
-    return json.dumps({ "nodes": nodes, "links": links })
+    return { "nodes": nodes, "edges": links }

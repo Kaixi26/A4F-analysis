@@ -49,7 +49,7 @@ class AST:
 
     elif className == 'PrimSig':
       ast.name = expr.toString()
-
+    
     else:
       print("Cannot build AST from ", end="'")
       print(className, end="' ")

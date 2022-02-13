@@ -99,11 +99,11 @@ dataset = load_dataset("datasets/trash.json")
 fst_execution = list(dataset.execution_traces.keys())[0]
 #print(len(json.dumps(dataset.execution_traces[fst_execution].subtraces_by_cmd)))
 
-graph = d3.D3()
 
-codes = {"{true}": "initial state"}
-i = 0
-for cmdi in [9]:
+graphs = {}
+for cmdi in range(9,20):
+  graph = d3.D3()
+  codes = {"{true}": "initial state"}
   for execution_key in dataset.execution_traces.keys():
     if cmdi not in dataset.execution_traces[execution_key].subtraces_by_cmd:
       continue
@@ -111,10 +111,11 @@ for cmdi in [9]:
     prev = "{true}"
     graph.add_visit(prev)
     graph.add_group(prev, 1)
+    prop_name = "prop" + str(cmdi+1)
 
     for execution in dataset.execution_traces[execution_key].subtraces_by_cmd[cmdi]:
       assert(execution["cmd_i"] == cmdi)
-      source = alloy.keep_pred(execution["code"], "prop"+str(cmdi+1), alloy.pred_list())
+      source = alloy.keep_pred(execution["code"], prop_name, alloy.pred_list())
       try:
         ast = alloy.pred_ast_from_source(source)
       except:
@@ -127,15 +128,15 @@ for cmdi in [9]:
       graph.add_visit(curr)
 
       prev = curr
-      i += 1
 
       #if execution["sat"] == 0:
       #  break
 
-print(graph.to_json())
-print("------------")
-print(re.escape(json.dumps(codes)))
-print("total " + str(i))
+  graph_dict = graph.to_dict()
+  graph_dict["codes"] = codes
+  graphs[prop_name] = graph_dict
+
+print(re.escape(json.dumps(graphs)))
 
 #validate_dataset(dataset)
 
