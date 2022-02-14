@@ -29,16 +29,14 @@ class AST:
 
 
     elif className == 'ExprQt':
-      try:
-        ast.name = expr.op.toString()
-        scp = []
-        for i in range(expr.decls.size()):
-          scp.append(expr.decls.get(i).expr.toString())
-        print(scp)
-        ast.children.append(AST.from_expr(expr.sub))
-      except e:
-        print(e)
-        exit(1)
+      ast.name = expr.op.toString()
+
+      scp = []
+      for i in range(expr.decls.size()):
+        scp.append(expr.decls.get(i).expr)
+        ast.children.append(AST.from_expr(expr.decls.get(i).expr))
+
+      ast.children.append(AST.from_expr(expr.sub))
 
     elif className == 'ExprBinary':
       ast.name = expr.op.toString()
@@ -57,6 +55,10 @@ class AST:
 
     elif className == 'PrimSig':
       ast.name = expr.toString()
+    
+    elif className == 'Field':
+      ast.name = 'field'
+      ast.children.append(AST.from_expr(expr.decl().expr))
     
     else:
       print("Cannot build AST from ", end="'")

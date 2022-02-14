@@ -4,6 +4,7 @@ import re
 import alloy
 import ast
 import d3
+from apted import APTED, Config
 
 class ExecutionTrace:
   def __init__(self):
@@ -95,65 +96,86 @@ def load_dataset(filename):
 
 
 dataset = load_dataset("datasets/trash.json")
-#print(json.dumps(dataset.execution_traces["Rad8rJh4N3ZFN8Eeu"].full[0]))
-fst_execution = list(dataset.execution_traces.keys())[0]
-#print(len(json.dumps(dataset.execution_traces[fst_execution].subtraces_by_cmd)))
 
+def calculate_sat_ast(dataset, cmd_i):
+  prop_name = "prop" + str(cmd_i+1)
 
-graphs = {}
-for cmdi in range(19,20):
-  graph = d3.D3()
-  codes = {"{true}": "initial state"}
-  vistrue = 0
-  vissat = 0
+  ret = {}
   for execution_key in dataset.execution_traces.keys():
-    if cmdi not in dataset.execution_traces[execution_key].subtraces_by_cmd:
+    if cmd_i not in dataset.execution_traces[execution_key].subtraces_by_cmd:
       continue
-
-    vistrue += 1
-    prev = "{true}"
-    graph.add_visit(prev)
-    graph.add_group(prev, 1)
-    prop_name = "prop" + str(cmdi+1)
-
-    for execution in dataset.execution_traces[execution_key].subtraces_by_cmd[cmdi]:
-      assert execution["cmd_i"] == cmdi
-      source = alloy.keep_pred(execution["code"], prop_name, alloy.pred_list())
-      try:
-        ast = alloy.pred_ast_from_source(source)
-      except:
+    
+    for execution in dataset.execution_traces[execution_key].subtraces_by_cmd[cmd_i]:
+      assert execution["cmd_i"] == cmd_i
+      if execution["sat"] != 0:
         continue
-      curr = ast.toApted()
 
-      codes[curr] = source
-      graph.add_link(prev, curr)
-      graph.add_group(curr, execution["sat"])
-      graph.add_visit(curr)
+      source = alloy.keep_pred(execution["code"], prop_name, alloy.pred_list())
+      ast = alloy.pred_ast_from_source(source)
+      ret[ast.toApted()] = { "source": source, "ast": ast }
 
-      prev = curr
+  return ret
 
-      if curr == "{always{all{since{in{var/this/File}{this/Trash}}{!in{var/this/File}{this/Protected}}}}}" and not execution["sat"] == 0:
-        #print(source)
-        exit(execution["code"])
-        exit(0)
-      #elif curr == "{always{all{since{in{var/this/File}{this/Trash}}{!in{var/this/File}{this/Protected}}}}}":
-      #  print(source)
-      #  #exit(execution["code"])
-      #  exit(0)
+def calculate_closest_sat_ast(ast, sat_asts):
+  min_dist = None
+  min_ast = None
+  for sat_ast in sat_asts:
+    sat_ast = sat_asts[sat_ast]["ast"]
+    dist = APTED(ast, sat_ast, Config()).compute_edit_distance()
+    if min_dist == None or dist < min_dist:
+      min_dist = dist
+      min_ast = sat_ast
 
-      if execution["sat"] == 0:
-        vissat += 1
-        break
+  return { "dist": min_dist, "ast": min_ast.toApted() }
 
-  #print(vissat)
-  #print(vistrue)
-  #print(graph.visits)
-  #print(graph.links)
-  graph_dict = graph.to_dict()
-  graph_dict["codes"] = codes
-  graphs[prop_name] = graph_dict
+def calculate_graphs(dataset):
+  graphs = {}
+  for cmd_i in range(9,10):
+    graph = d3.D3()
+    codes = {"{true}": "initial state"}
+    sat_asts = calculate_sat_ast(dataset, cmd_i)
+    ast_dists = {}
 
-#print(json.dumps(graphs))
+    for execution_key in dataset.execution_traces.keys():
+      if cmd_i not in dataset.execution_traces[execution_key].subtraces_by_cmd:
+        continue
+
+      prev = "{true}"
+      graph.add_visit(prev)
+      graph.add_group(prev, 1)
+      prop_name = "prop" + str(cmd_i+1)
+
+      for execution in dataset.execution_traces[execution_key].subtraces_by_cmd[cmd_i]:
+        assert execution["cmd_i"] == cmd_i
+
+        source = alloy.keep_pred(execution["code"], prop_name, alloy.pred_list())
+        try:
+          ast = alloy.pred_ast_from_source(source)
+        except Exception as e:
+          continue
+        curr = ast.toApted()
+        ast_dists[curr] = calculate_closest_sat_ast(ast, sat_asts)
+
+        codes[curr] = source
+        graph.add_link(prev, curr)
+        graph.add_group(curr, execution["sat"])
+        graph.add_visit(curr)
+
+        prev = curr
+
+        if execution["sat"] == 0:
+          break
+
+    graph_dict = graph.to_dict()
+    graph_dict["codes"] = codes
+    #graph_dict["sat_asts"] = list(map(lambda x: x.toApted(), sat_asts))
+    graph_dict["dists"] = ast_dists
+    graphs[prop_name] = graph_dict
+
+  return graphs
+
+#calculate_graphs(dataset)
+print(re.escape(json.dumps(calculate_graphs(dataset))))
 
 #validate_dataset(dataset)
 

@@ -44,8 +44,9 @@
 
         var nodes = data.nodes.map(x => ({
             ...x,
-            value: Math.pow(x.n, 1.5),
+            value: x.n,
             total: x.n,
+            label: x.n.toString(),
             color: node_color(x.grp),
         }))//.slice(0,10)
 
@@ -79,7 +80,10 @@
             })
 
             const selected_node = nodes[selected]
-            setInfo(`total: ${selected_node.total}\nast: ${selected_node.name}\n---------\n\n${code[selected_node.name]}`)
+            setInfo(`total: ${selected_node.total}\nast: ${selected_node.name}\n
+---------------------\n\n${code[selected_node.name]}\n
+---------------------\n\ndist to closest sat: ${data.dists[selected_node.name].dist}\nsource of closest sat:\n${code[data.dists[selected_node.name].ast]}
+`)
             nodesDataset.update(nodes)
             edgesDataset.update(edges)
         }
@@ -111,6 +115,8 @@
         }
 
         highlightOff = () => {
+            sum_dists = nodes.reduce((acc, node) => acc + data.dists[node.name].dist * node.total,0)
+            total_nodes = nodes.reduce((acc, node) => acc + node.total,0)
             nodes = nodes.map(x => ({
                 ...x,
                 color: node_color(x.grp),
@@ -120,7 +126,7 @@
                 color: edge_color((nodes[x.source] ?? {}).grp ?? 0),
             }))
 
-            setInfo(`select a node or edge to show info.`)
+            setInfo(`select a node or edge to show info.\n\ntotal nodes: ${total_nodes}\nsum of all distances: ${sum_dists}\ndistance average: ${sum_dists/total_nodes}`)
             nodesDataset.update(nodes)
             edgesDataset.update(edges)
         }
