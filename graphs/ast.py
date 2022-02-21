@@ -27,6 +27,10 @@ class AST:
       ast.name = expr.op.toString()
       ast.children = list(map(lambda x: AST.from_expr(x), expr.args))
 
+    elif className == 'ExprITE':
+      ast.name = "ite"
+      ast.children.append(AST.from_expr(expr.left))
+      ast.children.append(AST.from_expr(expr.right))
 
     elif className == 'ExprQt':
       ast.name = expr.op.toString()
@@ -55,6 +59,13 @@ class AST:
 
     elif className == 'PrimSig':
       ast.name = expr.toString()
+
+    # Probably not the best way
+    elif className == 'ExprCall':
+      ast.name = "call"
+      ast.children.append(AST.from_expr(expr.fun.getBody()))
+      for child in list(map(lambda x: AST.from_expr(x), expr.args)):
+        ast.children.append(child)
     
     elif className == 'Field':
       ast.name = 'field'

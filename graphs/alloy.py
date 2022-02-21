@@ -21,7 +21,7 @@ source = "\nvar sig File {\n\tvar link : lone File\n}\nvar sig Trash in File {}\
 def purge_pred(source, pred_name):
   match = re.search(r"pred\s+" + pred_name, source)
   if match is None:
-    return
+    return source
 
   begin = match.span(0)[0]
   i = begin
@@ -36,8 +36,13 @@ def purge_pred(source, pred_name):
 
   return source[0:begin] + source[end+1:]
 
-def pred_list():
-  return list(map(lambda x: "prop" + str(x), range(1,21)))
+def pred_list(ret=[]):
+  if ret != []:
+    return ret
+  for i in range(1, 21):
+    ret.append("prop" + str(i))
+    ret.append("inv" + str(i))
+  return ret
 
 def keep_pred(source, pred_name, pred_names):
   for pred in pred_names:

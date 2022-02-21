@@ -4,6 +4,7 @@ import re
 import alloy
 import ast
 import d3
+import sys
 from apted import APTED, Config
 
 class ExecutionTrace:
@@ -95,10 +96,12 @@ def load_dataset(filename):
   return dataset
 
 
-dataset = load_dataset("datasets/trash.json")
+
+def prop_name_from_cmdi(cmd_i):
+  return "inv" + str(cmd_i+1)
 
 def calculate_sat_ast(dataset, cmd_i):
-  prop_name = "prop" + str(cmd_i+1)
+  prop_name = prop_name_from_cmdi(cmd_i)
 
   ret = {}
   for execution_key in dataset.execution_traces.keys():
@@ -128,12 +131,14 @@ def calculate_closest_sat_ast(ast, sat_asts):
 
   return { "dist": min_dist, "ast": min_ast.toApted() }
 
+
 def calculate_graphs(dataset):
   graphs = {}
-  for cmd_i in range(9,10):
+  for cmd_i in range(0,20):
+    print("calculating cmd_i " + str(cmd_i), file=sys.stderr)
     graph = d3.D3()
     codes = {"{true}": "initial state"}
-    sat_asts = calculate_sat_ast(dataset, cmd_i)
+    sat_asts = {} #calculate_sat_ast(dataset, cmd_i)
     ast_dists = {}
 
     for execution_key in dataset.execution_traces.keys():
@@ -143,18 +148,21 @@ def calculate_graphs(dataset):
       prev = "{true}"
       graph.add_visit(prev)
       graph.add_group(prev, 1)
-      prop_name = "prop" + str(cmd_i+1)
+      prop_name = prop_name_from_cmdi(cmd_i)
 
       for execution in dataset.execution_traces[execution_key].subtraces_by_cmd[cmd_i]:
+        if execution["sat"] == -1:
+          continue
         assert execution["cmd_i"] == cmd_i
 
-        source = alloy.keep_pred(execution["code"], prop_name, alloy.pred_list())
         try:
+          source = alloy.keep_pred(execution["code"], prop_name, alloy.pred_list())
           ast = alloy.pred_ast_from_source(source)
-        except Exception as e:
-          continue
+        except:
+            continue
+
         curr = ast.toApted()
-        ast_dists[curr] = calculate_closest_sat_ast(ast, sat_asts)
+        #ast_dists[curr] = calculate_closest_sat_ast(ast, sat_asts)
 
         codes[curr] = source
         graph.add_link(prev, curr)
@@ -174,9 +182,13 @@ def calculate_graphs(dataset):
 
   return graphs
 
-#calculate_graphs(dataset)
-print(re.escape(json.dumps(calculate_graphs(dataset))))
+for f in ["QxGnrFQnXPGh2Lh8C.json"]:
+  dataset = load_dataset("datasets/" + f)
+  print(json.dumps(calculate_graphs(dataset)))
 
+
+#calculate_graphs(dataset)
+#dataset = load_dataset("datasets/bNCCf9FMRZoxqobfX.json")
 #validate_dataset(dataset)
 
 #total = 0
