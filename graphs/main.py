@@ -275,15 +275,19 @@ for f in ["trash.json"]:
   label_from_cmd_i = lambda cmd_i: "prop" + str(cmd_i+1)
   dataset = load_dataset("datasets/" + f, label_from_cmd_i)
   obj = {}
-  for cmd_i in range(1):
+  obj["cmds"] = {}
+  for cmd_i in range(0,1):
     print("calculating for cmd " + str(cmd_i), file=sys.stderr)
     g = calculate_semantic_graph(dataset, cmd_i)
-    obj[label_from_cmd_i(cmd_i)] = { "nodes": g.nodes, "edges": g.edges }
+    obj["cmds"][label_from_cmd_i(cmd_i)] = { "nodes": g.nodes, "edges": g.edges }
 
   obj["execution_info"] = {}
   for id in dataset.by_id:
     if "code_stripped" in dataset.by_id[id]:
-      obj["execution_info"][id] = { "code_stripped" : dataset.by_id[id]["code_stripped"] }
+      obj["execution_info"][id] = { 
+        "code_stripped" : dataset.by_id[id]["code_stripped"],
+        "sat": dataset.by_id[id]["sat"]
+        }
 
   print(json.dumps(obj))
 

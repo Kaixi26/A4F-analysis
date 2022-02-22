@@ -1,0 +1,39 @@
+<html>
+
+<head>
+    <script type="text/javascript" src="https://unpkg.com/vis-network/standalone/umd/vis-network.min.js"></script>
+    <script type="text/javascript" src="./session_viz.js"></script>
+    <link rel="stylesheet" href="/styles.css">
+    <div id="err" style="color: red; display: none;">
+        Error loading data, check console log.
+    </div>
+
+    <div id="keys" class="keys">
+    </div>
+
+    <div style="display: flex;gap: 20px; width: max-content;">
+        <div id="network" class="network"></div>
+        <code id="info" class="info">select a node or edge to show info.</code>
+    </div>
+    <div id="extras" style="display: grid; grid-template-columns: repeat(4,1fr);">
+    </div>
+</head>
+
+<body>
+
+    <script type="text/javascript">
+        const urlParams = new URLSearchParams(window.location.search);
+        const data = urlParams.get("data");
+        fetch(data ? `data/${data}.json` : "data.json")
+            .then(r => r.json())
+            .then(data => {
+                console.debug(data)
+                session_viz.start(data)
+            }).catch(err => {
+                document.getElementById("err").style.display = "block";
+                console.debug(err)
+            })
+    </script>
+</body>
+
+</html>

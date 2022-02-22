@@ -106,9 +106,10 @@ def extract_pred(source, pred, prefix=""):
 
   # TODO: find all dependencies of func
   # only looking for dependencies in main predicate
-  target_source = slice_from_pos(source, func.pos())
+  target_source = slice_from_pos(source, func.getBody().pos())
 
-  dependencies = {}
+  dependencies = { }
+  dependencies[pred] = func
   for func in world.getAllFunc():
     label = re.sub("this/", "", str(func.label))
     if re.search(label, target_source):
@@ -151,9 +152,10 @@ def semantic_equals(world, label0, label1):
   check = TranslateAlloyToKodkod.execute_command(A4Reporter.NOP, world.getAllSigs(), cmd, opt)
   return not check.satisfiable()
 
-test = "\nvar sig File {\n\tvar link : lone File\n}\nvar sig Trash in File {}\nvar sig Protected in File {}\n\n// initially the trash is empty and there are no protected file\npred prop1 {\n\t\n  \tno Trash+Protected\n}\t\n\n// initially there are no files, but some are immediately created\npred prop2 {\n  \tno File\n\t\n  \tafter some File\n}\n\n// there is always some file in the system\npred prop3 {\n\talways some File\n}\n\n// some file will eventually be sent to the trash\npred prop4 {\n  \n \n  \n  eventually some f:File | f in Trash\n}\n\n// some file will eventually be deleted\npred prop5 {\n\teventually some f:File | f not in File'\n}\n\n// whenever a file is sent to the trash, it remains in there forever\npred prop6 {\n\talways all f:Trash | always f in Trash\n  \t\n  \t\n}\n\n// some file will be protected\npred prop7 {\n\teventually some f:File | f in Protected\n}\n\npred isLink[f:File]{\n\tsome g:File | g->f in link\n}\n// whenever a link exists, it will eventually be in the trash\npred prop8 {\n\n  always all f:File | isLink[f] implies eventually f.link in Trash\n}\n\n// a protected file is at no time sent to the trash\n"
+#test = "\nvar sig File {\n\tvar link : lone File\n}\nvar sig Trash in File {}\nvar sig Protected in File {}\n\n// initially the trash is empty and there are no protected file\npred prop1 {\n\t\n  \tno Trash+Protected\n}\t\n\n// initially there are no files, but some are immediately created\npred prop2 {\n  \tno File\n\t\n  \tafter some File\n}\n\n// there is always some file in the system\npred prop3 {\n\talways some File\n}\n\n// some file will eventually be sent to the trash\npred prop4 {\n  \n \n  \n  eventually some f:File | f in Trash\n}\n\n// some file will eventually be deleted\npred prop5 {\n\teventually some f:File | f not in File'\n}\n\n// whenever a file is sent to the trash, it remains in there forever\npred prop6 {\n\talways all f:Trash | always f in Trash\n  \t\n  \t\n}\n\n// some file will be protected\npred prop7 {\n\teventually some f:File | f in Protected\n}\n\npred isLink[f:File]{\n\tsome g:File | g->f in link\n}\n// whenever a link exists, it will eventually be in the trash\npred prop8 {\n\n  always all f:File | isLink[f] implies eventually f.link in Trash\n}\n\n// a protected file is at no time sent to the trash\n"
+#test = "\nvar sig File {\n\tvar link : lone File\n}\nvar sig Trash in File {}\nvar sig Protected in File {}\npred prop1 {\n\tno Trash + Protected\n}\npred prop2 {\n\tno File\n  \tafter some File\n}\npred prop3 {\n\talways some File\n}\npred prop4 {\n\teventually some Trash\n}\npred prop5 {\n\teventually some f:File | f not in File'\n}\npred prop6 {\n\talways all t:Trash | always t in Trash\n}\npred prop7 {\n \teventually some Protected \n}\npred prop8 {\n\teventually all f:File | f in f.link implies f.link in Trash\n}\npred prop9 {\n\talways all f:Protected | f not in Trash\n}\npred prop10 {\n\talways all f:Protected | f in Protected'\n}\npred prop11 {\n\n}\npred prop12 {\n\n}\npred prop13 {\n\n}\npred prop14 {\n\n}\npred prop15 {\n\n}\npred prop16 {\n\n}\npred prop17 {\n\n}\npred prop18 {\n\n}\npred prop19 {\n\n}\npred prop20 {\n\n}"
 #print(test)
-#print(extract_pred(test, "prop8", "prefix_"))
+#print(extract_pred(test, "prop10", "prefix_"))
 
 #def pred_ast_from_source(world):
 #
