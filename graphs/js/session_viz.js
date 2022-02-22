@@ -1,28 +1,8 @@
-<html>
-<head>
-    <script type="text/javascript" src="https://unpkg.com/vis-network/standalone/umd/vis-network.min.js"></script>
-    <script type="text/javascript" src="./data.js"></script>
 
-    <style type="text/css">
-        #mynetwork {
-            width: 750px;
-            height: 750px;
-            border: 1px solid lightgray;
-        }
-    </style>
-    <div style="display: flex;gap: 20px;">
-        <div id="mynetwork"></div>
-        <code id="info" style="display: block;white-space: pre-wrap;font-size: 20px;">
-            select a node or edge to show info.
-        </code>
-    </div>
-    <div id="keys" style="display: flex;gap: 20px;">
-    </div>
-</head>
-<body>
+session_viz = {}
 
-<script type="text/javascript">
-    console.debug(data)
+session_viz.start = (data, elements) => {
+
     dataKeys = Object.keys(data)
     dataKeys.forEach(key => {
         var button = document.createElement("BUTTON");
@@ -82,7 +62,7 @@
             const selected_node = nodes[selected]
             setInfo(`total: ${selected_node.total}\nast: ${selected_node.name}\n
 ---------------------\n\n${code[selected_node.name]}\n
----------------------\n\ndist to closest sat: ${data.dists[selected_node.name].dist}\nsource of closest sat:\n${code[data.dists[selected_node.name].ast]}
+---------------------\n\ndist to closest sat: ${(data.dists[selected_node.name]??{}).dist}\nsource of closest sat:\n${code[(data.dists[selected_node.name]??{}).ast]}
 `)
             nodesDataset.update(nodes)
             edgesDataset.update(edges)
@@ -115,8 +95,9 @@
         }
 
         highlightOff = () => {
-            sum_dists = nodes.reduce((acc, node) => acc + data.dists[node.name].dist * node.total,0)
-            total_nodes = nodes.reduce((acc, node) => acc + node.total,0)
+            valid_nodes = nodes.filter(node => node.name !== "{true}" && node.grp !== 0 && data.dists[node.name])
+            sum_dists = valid_nodes.reduce((acc, node) => acc + data.dists[node.name].dist * node.total,0)
+            total_nodes = valid_nodes.reduce((acc, node) => acc + node.total,0)
             nodes = nodes.map(x => ({
                 ...x,
                 color: node_color(x.grp),
@@ -126,7 +107,12 @@
                 color: edge_color((nodes[x.source] ?? {}).grp ?? 0),
             }))
 
-            setInfo(`select a node or edge to show info.\n\ntotal nodes: ${total_nodes}\nsum of all distances: ${sum_dists}\ndistance average: ${sum_dists/total_nodes}`)
+            setInfo(`select a node or edge to show info.\n\n
+total solved nodes: ${nodes.filter(node => node.grp === 0).reduce((acc, node) => acc + node.total, 0)}\n
+stats not counting {true} or correct solutions:
+    total nodes: ${total_nodes}\n
+    sum of all distances: ${sum_dists}\n
+    distance average: ${sum_dists/total_nodes}`)
             nodesDataset.update(nodes)
             edgesDataset.update(edges)
         }
@@ -140,7 +126,7 @@
         }
 
         draw = (nodes, edges) => {
-            var container = document.getElementById('mynetwork');
+            var container = document.getElementById('network');
             var data = {
                 nodes: nodesDataset,
                 edges: edgesDataset
@@ -158,8 +144,4 @@
     }
 
     reload(data[dataKeys[0]])
-
-</script>
-</body>
-
-</html>
+}

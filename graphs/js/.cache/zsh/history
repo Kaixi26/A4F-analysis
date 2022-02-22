@@ -1,0 +1,45 @@
+cd git/A4F-analysis/graphs
+ls
+cd datasets
+ls
+cd ..
+ls
+cd js
+ls
+firefox network.html
+nix-shell -p conda
+python -m SimpleHTTPServer
+python3 -m http.server
+cd
+ls
+cd git/Kaixi26.github.io/alloy
+ls
+mkdir data
+ls
+rm -rf data
+ls
+cd
+ls
+cd git/A4F-analysis/graphs/js
+ls
+python3 -m http.server
+cd .dotfiles
+ls
+codium .
+xdg-settings get default-web-browser
+ls
+cd
+cd git/A4F-analysis/graphs/js
+ls
+xdg-open network.html
+apply-system.sh
+xdg-open network.html
+nix-shell -p mastodon
+nix-shell -p mastodon mastodon-desktop
+v .cache/zsh/history
+cd git
+ls
+cd A4F-analysis/graphs/js
+ls
+nix-shell -p conda -r conda -c zsh
+nix-shell -p conda
