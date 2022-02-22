@@ -134,7 +134,10 @@ stats not counting {true} or correct solutions:
             var options = {
                 nodes: {
                     shape: "dot"
-                }
+                },
+                physics: {
+                    stabilization: false
+                },
             }
             var network = new vis.Network(container, data, options);
             network.on("click", highlightHandler);
