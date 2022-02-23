@@ -12,7 +12,11 @@ session_viz.start = (data) => {
     })
 
 
-    function reload(cmdKey) {
+    function reload(cmdKey, hide_below) {
+        document.getElementById("min-filter").oninput = e => {
+            reload(cmdKey, e.target.value || 0)
+        }
+
         node_color = group => (group === 1 && "#0000FF") || (group === 0 && "#00FF00") || "#FF0000"
         node_color_hid = group => (group === 1 && "#0000FF55") || (group === 0 && "#00FF0055") || "#FF000055"
 
@@ -26,7 +30,7 @@ session_viz.start = (data) => {
             total: x.ids.length,
             group: (data.execution_info[x.ids[0]] ?? {"sat": 1}).sat,
             color: node_color((data.execution_info[x.ids[0]] ?? {"sat": 1}).sat),
-        }))
+        })).filter(x => x.total >= hide_below)
 
         var edges = Object.entries(data.cmds[cmdKey].edges)
             .flatMap(([from, tos]) => {
@@ -42,7 +46,7 @@ session_viz.start = (data) => {
                         color: edge_color(1),
                     }
                 })
-            })
+            }).filter(x => x.total >= hide_below)
 
         var nodesDataset = new vis.DataSet(nodes);
         var edgesDataset = new vis.DataSet(edges);
@@ -150,5 +154,5 @@ ${to && data.execution_info[to].code_stripped}
         draw(nodes, edges)
     }
 
-    reload(cmdKeys[0])
+    reload(cmdKeys[0], 0)
 }
