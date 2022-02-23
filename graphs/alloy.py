@@ -18,6 +18,7 @@ from edu.mit.csail.sdg.parser import CompModule
 from edu.mit.csail.sdg.translator import A4Options
 from edu.mit.csail.sdg.translator import A4Solution
 from edu.mit.csail.sdg.translator import TranslateAlloyToKodkod
+from java.util import ArrayList;
 
 
 source0 = "var sig File {\n\tvar link : lone File\n}\nvar sig Trash in File {}\nvar sig Protected in File {}\n\npred prop1 {\n\tno Trash\n  \tno Protected\n}\n\npred prop2 { no Protected }\n"
@@ -145,14 +146,21 @@ def calculate_world_func_map(world):
     ret[func.label] = func
   return ret
 
-def semantic_equals(world, world_func_map, label0, label1):
+def semantic_equals(world, world_func_map, label0, label1, dependency_labels):
+
+  dependencies = []
+  for dependency_label in dependency_labels:
+    dependencies.append(world_func_map["this/" + dependency_label].call())
+  
+  dependencies_expr = ExprList.make(None, None, ExprList.Op.AND, ArrayList(dependencies))
   
   func0 = world_func_map["this/" + label0] 
   func1 = world_func_map["this/" + label1] 
   
-  expr = func0.call().iff(func1.call()).not_()
+  # dependencies => (func0 <=> func1)
+  expr = dependencies_expr.implies(func0.call().iff(func1.call()))
 
-  cmd = Command(True, -1, -1, -1, expr)
+  cmd = Command(True, -1, -1, -1, expr.not_())
 
   check = TranslateAlloyToKodkod.execute_command(A4Reporter.NOP, world.getAllSigs(), cmd, opt)
   return not check.satisfiable()
