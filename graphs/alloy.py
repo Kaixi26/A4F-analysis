@@ -139,11 +139,16 @@ def remove_funcs(source):
 
   return strip_comments("".join(source_lst))
 
-def semantic_equals(world, label0, label1):
+def calculate_world_func_map(world):
+  ret = {}
+  for func in world.getAllFunc():
+    ret[func.label] = func
+  return ret
+
+def semantic_equals(world, world_func_map, label0, label1):
   
-  # find funcs by label (beautiful and pythonic)
-  func0 = next((fun for fun in world.getAllFunc() if fun.label == "this/" + label0), None)
-  func1 = next((fun for fun in world.getAllFunc() if fun.label == "this/" + label1), None)
+  func0 = world_func_map["this/" + label0] 
+  func1 = world_func_map["this/" + label1] 
   
   expr = func0.call().iff(func1.call()).not_()
 
@@ -151,6 +156,7 @@ def semantic_equals(world, label0, label1):
 
   check = TranslateAlloyToKodkod.execute_command(A4Reporter.NOP, world.getAllSigs(), cmd, opt)
   return not check.satisfiable()
+
 
 #test = "\nvar sig File {\n\tvar link : lone File\n}\nvar sig Trash in File {}\nvar sig Protected in File {}\npred prop1 {\n\n}\npred prop2 {\n\n}\npred prop3 {\n\talways some File\n}\npred prop4 {\n\t\n  \teventually some Trash\n}\npred prop5 {\n  \t\n\t\n\t\n}\npred prop6 {\n\talways all f:File | f in Trash implies after f in Trash\n}\t\npred prop7 {\n\t\n  \teventually some Protected\n}\npred prop8 {\n\t\n}\npred prop9 {\n\talways all p:Protected | p not in Trash\n}\npred prop10 {\n  \t\n\t\n}\npred prop11 {\n\talways all f:File | f in File-Protected implies after f in Protected\n}\npred prop12 {\n\t releases always f in Trash\n}\npred prop13 {\n\n}\npred prop14 {\n\n}\npred prop15 {\n\n}\npred prop16 {\n\n}\npred prop17 {\n\n}\npred prop18 {\n\n}\npred prop19 {\n\n}\npred prop20 {\n\n}"
 #test = "\nvar sig File {\n\tvar link : lone File\n}\nvar sig Trash in File {}\nvar sig Protected in File {}\n\n// initially the trash is empty and there are no protected file\npred prop1 {\n\t\n  \tno Trash+Protected\n}\t\n\n// initially there are no files, but some are immediately created\npred prop2 {\n  \tno File\n\t\n  \tafter some File\n}\n\n// there is always some file in the system\npred prop3 {\n\talways some File\n}\n\n// some file will eventually be sent to the trash\npred prop4 {\n  \n \n  \n  eventually some f:File | f in Trash\n}\n\n// some file will eventually be deleted\npred prop5 {\n\teventually some f:File | f not in File'\n}\n\n// whenever a file is sent to the trash, it remains in there forever\npred prop6 {\n\talways all f:Trash | always f in Trash\n  \t\n  \t\n}\n\n// some file will be protected\npred prop7 {\n\teventually some f:File | f in Protected\n}\n\npred isLink[f:File]{\n\tsome g:File | g->f in link\n}\n// whenever a link exists, it will eventually be in the trash\npred prop8 {\n\n  always all f:File | isLink[f] implies eventually f.link in Trash\n}\n\n// a protected file is at no time sent to the trash\n"

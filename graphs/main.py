@@ -22,6 +22,7 @@ class Dataset:
     self.cmd_i_to_label = None
     self.world_code = ""
     self.world = None
+    self.world_func_map = None
 
 
 def validate_dataset(dataset):
@@ -122,8 +123,8 @@ def load_dataset(filename, cmd_i_to_label):
     if "code_stripped" in dataset.by_id[id]:
       dataset.world_code += "\n" + dataset.by_id[id]["code_stripped"]
 
-  #print(dataset.world_code)
   dataset.world = alloy.parse(dataset.world_code)
+  dataset.world_func_map = alloy.calculate_world_func_map(dataset.world)
 
   print("Everything parsed. :)", file=sys.stderr)
 
@@ -232,7 +233,7 @@ def calculate_semantic_graph(dataset, cmd_i):
 
     def add_node(self, id):
       for node in self.nodes:
-        if alloy.semantic_equals(self.dataset.world, self.id_to_label(node["ids"][0]), self.id_to_label(id)):
+        if alloy.semantic_equals(self.dataset.world, self.dataset.world_func_map, self.id_to_label(node["ids"][0]), self.id_to_label(id)):
           node["ids"].append(id)
           return
       self.nodes.append({"ids": [id]})
@@ -261,25 +262,26 @@ def calculate_semantic_graph(dataset, cmd_i):
     for execution in dataset.execution_traces[execution_key].subtraces_by_cmd[cmd_i]:
       if execution["sat"] == -1:
         continue
-      assert execution["cmd_i"] == cmd_i and "code_stripped" in execution
+      try:
+        assert execution["cmd_i"] == cmd_i and "code_stripped" in execution
 
-      g.add_node(execution["_id"])
-      g.add_edge(prev, execution["_id"])
+        g.add_node(execution["_id"])
+        g.add_edge(prev, execution["_id"])
+      except AssertionError:
+        print("assertion failed for id " + execution["_id"], file=sys.stderr)
+      except:
+        print("failed for id " + execution["_id"], file=sys.stderr)
 
       prev = execution["_id"]
 
   return g
     
 
-for f in ["trash.json"]:
+for filename in ["trash.json"]: #["bNCCf9FMRZoxqobfX.json", "dkZH6HJNQNLLDX6Aj.json", "PSqwzYAfW9dFAa9im.json", "QxGnrFQnXPGh2Lh8C.json"]:
+  print("Loading " + filename, file=sys.stderr)
   label_from_cmd_i = lambda cmd_i: "prop" + str(cmd_i+1)
-  dataset = load_dataset("datasets/" + f, label_from_cmd_i)
+  dataset = load_dataset("datasets/" + filename, label_from_cmd_i)
   obj = {}
-  obj["cmds"] = {}
-  for cmd_i in range(0,1):
-    print("calculating for cmd " + str(cmd_i), file=sys.stderr)
-    g = calculate_semantic_graph(dataset, cmd_i)
-    obj["cmds"][label_from_cmd_i(cmd_i)] = { "nodes": g.nodes, "edges": g.edges }
 
   obj["execution_info"] = {}
   for id in dataset.by_id:
@@ -289,7 +291,17 @@ for f in ["trash.json"]:
         "sat": dataset.by_id[id]["sat"]
         }
 
-  print(json.dumps(obj))
+  obj["cmds"] = {}
+  for cmd_i in range(0, 20):
+    print("calculating for cmd " + str(cmd_i), file=sys.stderr)
+    #try:
+    g = calculate_semantic_graph(dataset, cmd_i)
+    obj["cmds"][label_from_cmd_i(cmd_i)] = { "nodes": g.nodes, "edges": g.edges }
+    #except:
+    #  print("failed for cmd " + str(cmd_i), file=sys.stderr)
+
+    with open("/tmp/" + filename, "w") as fp:
+      fp.write(json.dumps(obj))
 
 
 #calculate_graphs(dataset)
